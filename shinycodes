@@ -1,0 +1,69 @@
+install.packages("tidyverse")
+install.packages("shiny")
+library(tidyverse)
+library(shiny)
+
+census=read.csv('C:/Users/14193/Downloads/adult.csv')
+census_sub=select(census,c(1,2,4,10,13,14,15))
+census_sub$WORKCLASS=as.factor(census_sub$WORKCLASS)
+census_sub$EDUCATION=as.factor(census_sub$EDUCATION)
+census_sub$SEX=as.factor(census_sub$SEX)
+census_sub$NATIVE_COUNTRY=as.factor(census_sub$NATIVE_COUNTRY)
+glimpse(census_sub)
+sum(is.na(census_sub))
+
+shinyUI(fluidPage(
+  br(),
+  titlePanel('Trends in Demographics and Income'),
+ fluidRow(
+   column(width=12,selectInput(inputId='country',label='choose a country',choices=c("United-States", "Canada", "Mexico", "Germany", "Philippines"),selected="United-States"))
+ ),
+  
+  fluidRow(
+    column(width=3,wellPanel(radioButtons(inputId='continuous',label='continuous variables selection',selected='AGE',choices=c('AGE','HOURS_PER_WEEK')),
+                             radioButtons(inputId='graph',label='choose the desired graph',selected = 'histogram',choices=c('histogram','boxplot')))),
+  
+    column(width=9,plotOutput('p1'))
+  ),
+  fluidRow(
+    column(width=3,wellPanel(radioButtons(inputId='categorical',label='categorical variable selection',selected = 'EDUCATION',choices=c('EDUCATION','WORKCLASS','SEX')))),
+    column(width=9,plotOutput('p2'))
+    
+  )
+  
+  
+  
+))
+
+
+  shinyServer(function(input,output){
+   
+    df_country = reactive({
+      census_sub%>%filter(NATIVE_COUNTRY==input$country)
+      
+    })
+   output$p1=renderPlot({
+     if(input$graph=='histogram'){
+       ggplot(data=df_country(),aes_string(x=input$continuous))+geom_histogram()
+     }
+     else{
+       ggplot(data=df_country(),aes_string(x=input$continuous))+geom_boxplot()
+     }
+   }) 
+    
+    output$p2=renderPlot({
+      ggplot(data=df_country(),aes_string(x=input$categorical))+geom_bar()
+      
+    })
+    
+  
+    
+    
+    
+    
+  })
+  
+  
+  
+
+  
